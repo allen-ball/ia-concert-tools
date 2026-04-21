@@ -152,22 +152,9 @@ Default settings are in `ia_concert_tools/config.py`. You can modify:
 - Cache expiry (default: 7 days)
 - Excluded filenames
 
-## Migration from Bash Scripts
-
-If you're using the legacy Bash scripts:
-
-1. **Existing directories**: Python tools work with existing directory structures
-2. **Metadata cache**: Backward compatible with existing `.metadata.yaml` files
-3. **Side-by-side**: Can run both Bash and Python tools on the same data
-4. **Validation**: Compare outputs with `exiftool` before full migration
-
-### Deprecation Timeline
-
-- **Current**: Bash scripts remain available in repository
-- **Phase out**: Python becomes default after 6 months of testing
-- **Removal**: Bash scripts archived after 1 year
-
 ## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for development setup and workflow.
 
 ### Running Tests
 
