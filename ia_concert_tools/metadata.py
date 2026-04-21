@@ -17,6 +17,7 @@ import yaml
 
 from ia_concert_tools.config import Config
 from ia_concert_tools.logging_config import get_logger
+from ia_concert_tools.utils import normalize_date
 
 logger = get_logger("metadata")
 
@@ -219,7 +220,10 @@ class MetadataBuilder:
             metadata: Recording metadata
         """
         identifier = metadata.get("metadata", {}).get("identifier", "")
-        date = metadata.get("metadata", {}).get("date", "unknown")
+        date_raw = metadata.get("metadata", {}).get("date", "unknown")
+        
+        # Normalize date from ISO timestamp to YYYY-MM-DD format
+        date = normalize_date(date_raw)
         
         if not identifier or date == "unknown":
             return
