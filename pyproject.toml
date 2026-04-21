@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ia-concert-tools"
+version = "1.0.0"
+description = "Download and tag concert recordings from Internet Archive"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Allen Ball"},
+]
+keywords = ["internet-archive", "music", "concerts", "id3", "tagging"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+
+dependencies = [
+    "internetarchive>=3.0.0",
+    "mutagen>=1.45.0",
+    "pyyaml>=6.0",
+    "chardet>=5.0.0",
+    "click>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+    "types-PyYAML",
+]
+
+[project.scripts]
+ia-concerts = "ia_concert_tools.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/allen-ball/ia-mp3-download-and-tag"
+Repository = "https://github.com/allen-ball/ia-mp3-download-and-tag"
+
+[tool.setuptools.packages.find]
+include = ["ia_concert_tools*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=ia_concert_tools --cov-report=term-missing"
