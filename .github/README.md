@@ -198,6 +198,48 @@ ia_concert_tools/
 ## Requirements
 
 - Python 3.8+
+- internetarchive >= 3.0.0
+- mutagen >= 1.45.0
+- pyyaml >= 6.0
+- chardet >= 5.0.0
+- click >= 8.0.0
+
+## Examples
+
+### Complete Workflow
+
+```bash
+# 1. Download Grateful Dead concerts from specific dates
+ia-concerts download "Grateful Dead" 1972-06-17 1983-06-18 1984-06-24
+
+# 2. Update ID3 tags on downloaded files
+ia-concerts update-tags "Grateful Dead"
+
+# 3. Verify tags with dry-run
+ia-concerts update-tags "Grateful Dead" --dry-run
+```
+
+### Output Example
+
+```
+INFO: Found 3 unique dates with recordings
+INFO: [1/3] Date: 1972-06-17
+INFO:   ℹ Selected best of 2 recordings (score: 24850, 23 tracks)
+INFO:   → Downloading: gd1972-06-17.shure.melton.miller.116272.flac16
+INFO:   ✓ Downloaded: 1972-06-17 (25 files)
+```
+
+## Validation & Testing
+
+The Python implementation has been validated against the original Bash scripts:
+
+- ✅ All ID3 tags match reference implementation
+- ✅ Music.app COMM frames verified
+- ✅ Multi-disc support tested (2-3 discs)
+- ✅ Idempotent downloads and tagging
+- ✅ 96 files tagged successfully in test dataset
+
+See [VALIDATION.md](.github/VALIDATION.md) and [IDEMPOTENCY.md](.github/IDEMPOTENCY.md) for detailed test results.
 - Dependencies (auto-installed):
   - `internetarchive` - Internet Archive API
   - `mutagen` - ID3 tag manipulation
