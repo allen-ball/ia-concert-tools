@@ -72,7 +72,10 @@ class MetadataBuilder:
         score += mp3_count * Config.SCORE_MP3_COUNT_MULTIPLIER
         
         # Source quality
-        source = metadata.get("metadata", {}).get("source", "").lower()
+        source_raw = metadata.get("metadata", {}).get("source", "")
+        # Handle both string and list values
+        source = " ".join(source_raw) if isinstance(source_raw, list) else str(source_raw)
+        source = source.lower()
         if any(kw in source for kw in Config.SOUNDBOARD_KEYWORDS):
             score += Config.SCORE_SOUNDBOARD
         elif any(kw in source for kw in Config.MATRIX_KEYWORDS):
@@ -83,7 +86,10 @@ class MetadataBuilder:
             score += Config.SCORE_QUALITY_MICS
         
         # Lineage quality (high-res indicators)
-        lineage = metadata.get("metadata", {}).get("lineage", "").lower()
+        lineage_raw = metadata.get("metadata", {}).get("lineage", "")
+        # Handle both string and list values
+        lineage = " ".join(lineage_raw) if isinstance(lineage_raw, list) else str(lineage_raw)
+        lineage = lineage.lower()
         if any(kw in lineage for kw in Config.HIGH_RES_KEYWORDS):
             score += Config.SCORE_HIGH_RES
         
@@ -230,12 +236,19 @@ class MetadataBuilder:
         )
         size_mb = total_size // (1024 * 1024)
         
+        # Normalize source and lineage (can be strings or lists)
+        source_raw = metadata.get("metadata", {}).get("source", "")
+        source = " ".join(source_raw) if isinstance(source_raw, list) else str(source_raw)
+        
+        lineage_raw = metadata.get("metadata", {}).get("lineage", "")
+        lineage = " ".join(lineage_raw) if isinstance(lineage_raw, list) else str(lineage_raw)
+        
         recording_data = {
             "identifier": identifier,
             "title": metadata.get("metadata", {}).get("title", ""),
             "mp3_count": mp3_count,
-            "source": metadata.get("metadata", {}).get("source", ""),
-            "lineage": metadata.get("metadata", {}).get("lineage", ""),
+            "source": source,
+            "lineage": lineage,
             "total_size_mb": size_mb,
             "avg_rating": metadata.get("metadata", {}).get("avg_rating"),
             "score": self.score_recording(metadata)

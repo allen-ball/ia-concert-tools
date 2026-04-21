@@ -26,6 +26,8 @@ ia-concerts download "Billy Strings" --help
 
 ### Implementation Status
 
+> 📊 **For detailed project status, see [PROJECT-STATUS.md](PROJECT-STATUS.md)**
+
 **Phase 1: Core Infrastructure** ✅ COMPLETE
 - [x] Package structure with pyproject.toml
 - [x] Configuration module with all constants
@@ -34,48 +36,49 @@ ia-concerts download "Billy Strings" --help
 - [x] Character encoding detection (chardet)
 - [x] Input validation utilities
 
-**Phase 2: Metadata Module** 🚧 TODO
-- [ ] Fetch recordings from Internet Archive API
-- [ ] Implement quality scoring algorithm
-- [ ] Generate YAML cache
-- [ ] Cache age validation
+**Phase 2: Metadata Module** ✅ COMPLETE
+- [x] Fetch recordings from Internet Archive API
+- [x] Implement quality scoring algorithm
+- [x] Generate YAML cache
+- [x] Cache age validation
+- [x] Optimized date filtering (20x performance improvement)
 
-**Phase 3: Download Module** 🚧 TODO
-- [ ] Download using internetarchive library
-- [ ] Date filtering with prefix matching
-- [ ] Deduplication logic
-- [ ] Progress reporting
+**Phase 3: Download Module** ✅ COMPLETE
+- [x] Download using internetarchive library
+- [x] Date filtering with prefix matching
+- [x] Deduplication logic
+- [x] Progress reporting
 
-**Phase 4: Parsing Modules** 🚧 TODO
-- [ ] XML parser (*_meta.xml, *_files.xml)
-- [ ] Tracklist parser (multiple formats)
-- [ ] Filename pattern matching
-- [ ] HTML entity decoding
+**Phase 4: Parsing Modules** ✅ COMPLETE
+- [x] XML parser (*_meta.xml, *_files.xml)
+- [x] Tracklist parser (multiple formats)
+- [x] Filename pattern matching
+- [x] HTML entity decoding
 
-**Phase 5: Tagging Module** 🚧 TODO
-- [ ] Replace ffmpeg with mutagen
-- [ ] Metadata extraction from XML
-- [ ] Track name normalization
-- [ ] Multi-disc/set numbering
-- [ ] Music.app COMM frames
-- [ ] Idempotent tag updates
+**Phase 5: Tagging Module** ✅ COMPLETE
+- [x] Replace ffmpeg with mutagen
+- [x] Metadata extraction from XML
+- [x] Track name normalization
+- [x] Multi-disc/set numbering
+- [x] Music.app COMM frames
+- [x] Idempotent tag updates
 
-**Phase 6: Testing** 🚧 TODO
+**Phase 6: Testing** 🔜 NEXT
 - [ ] Unit tests for parsers
 - [ ] Integration tests
 - [ ] End-to-end tests
 - [ ] Type hints and docstrings
 
-**Phase 7: Deployment** 🚧 TODO
+**Phase 7: Deployment** 🔜 PLANNED
 - [ ] pipx installation
-- [ ] Validation against Bash scripts
+- [x] Validation against Bash scripts (see [VALIDATION.md](VALIDATION.md))
 - [ ] Migration guide
 
 ### Current Stats
 - **Files created**: 14 Python modules
-- **Lines of code**: ~900 lines
-- **Todos complete**: 5/31 (16.1%)
-- **Phase 1**: ✅ Complete
+- **Lines of code**: ~1,650 lines
+- **Todos complete**: 22/31 (71%)
+- **Phases 1-5**: ✅ Complete and tested
 
 ## Testing
 
@@ -128,31 +131,35 @@ import pdb; pdb.set_trace()
 ```
 ia-mp3-download-and-tag/
 ├── ia_concert_tools/          # Main package
-│   ├── __init__.py           # Package init
+│   ├── __init__.py           # Package init ✅
 │   ├── __main__.py           # CLI entry point ✅
 │   ├── config.py             # Configuration ✅
 │   ├── logging_config.py     # Logging setup ✅
-│   ├── metadata.py           # Metadata builder (stub)
-│   ├── downloader.py         # Downloader (stub)
-│   ├── tagger.py             # ID3 tagger (stub)
+│   ├── metadata.py           # Metadata builder ✅
+│   ├── downloader.py         # Downloader ✅
+│   ├── tagger.py             # ID3 tagger ✅
 │   ├── parsers/              # Parsers
 │   │   ├── __init__.py       ✅
-│   │   ├── xml_parser.py     # XML parsing (stub)
-│   │   ├── tracklist_parser.py (stub)
-│   │   └── filename_parser.py  (stub)
+│   │   ├── xml_parser.py     # XML parsing ✅
+│   │   ├── tracklist_parser.py ✅
+│   │   └── filename_parser.py  ✅
 │   └── utils/                # Utilities
 │       ├── __init__.py       ✅
 │       ├── encoding.py       # Encoding detection ✅
 │       └── validation.py     # Input validation ✅
 ├── tests/                    # Test suite
 │   ├── __init__.py
-│   ├── test_metadata.py      (TODO)
-│   ├── test_parsers.py       (TODO)
+│   ├── test_metadata.py      🔜 TODO
+│   ├── test_parsers.py       🔜 TODO
 │   └── fixtures/             # Test data
+├── .github/                  # Documentation
+│   ├── README.md             # User guide ✅
+│   ├── DEVELOPMENT.md        # This file ✅
+│   ├── PROJECT-STATUS.md     # Detailed status ✅
+│   ├── VALIDATION.md         # Test results ✅
+│   └── IDEMPOTENCY.md        # Idempotency tests ✅
 ├── venv/                     # Virtual environment (gitignored)
-├── pyproject.toml            # Package configuration ✅
-├── README.md                 # User documentation ✅
-└── DEVELOPMENT.md            # This file ✅
+└── pyproject.toml            # Package configuration ✅
 ```
 
 ## Implementation Order
@@ -181,16 +188,17 @@ Based on dependency graph:
 
 ## Next Steps
 
-### Immediate (Phase 2)
-1. Implement `metadata.py` - MetadataBuilder class
-2. Test with Internet Archive API
-3. Verify YAML cache output matches Bash version
+### Phase 6: Testing & Documentation
+1. Add unit tests for parsers (xml, tracklist, filename)
+2. Add integration tests (metadata → download → tag workflow)
+3. Add end-to-end tests with fixtures
+4. Add type hints and comprehensive docstrings
+5. Update README with more examples
 
-### After Phase 2
-1. Implement downloaders
-2. Build out parsers
-3. Implement tagger
-4. Add comprehensive tests
+### Phase 7: Deployment
+1. Package for pipx distribution
+2. Create migration guide for Bash script users
+3. Final documentation polish
 
 ## Useful Commands
 

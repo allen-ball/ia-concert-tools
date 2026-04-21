@@ -64,6 +64,8 @@ class Config:
     # Filename patterns for track parsing
     DISC_TRACK_PATTERNS = [
         r"[ds](\d+)[tT](\d{1,2})",          # d2t01, d2T01, s2t01, s2T01
+        r"[tT](\d{1,2})",                   # t01, T01 (single disc, track only)
+        r"^(\d{2})(\d{2})\s",               # 0101 (4 digits: disc+track with space)
     ]
     
     # Track number patterns (in order of precedence)
@@ -104,7 +106,7 @@ class Config:
     TARGET_ENCODING = "utf-8"
     
     # Parallel processing settings
-    MAX_WORKERS = 20                        # For concurrent downloads/processing
+    MAX_WORKERS = 4                         # For concurrent downloads/processing
     
     @classmethod
     def get_ia_search_query(cls, creator: str) -> str:

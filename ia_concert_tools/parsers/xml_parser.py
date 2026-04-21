@@ -97,8 +97,14 @@ class XmlParser:
         """
         Parse track titles from *_files.xml.
         
+        For MP3 files that are derivatives of FLAC files, the title metadata
+        is on the FLAC file, not the MP3. We need to:
+        1. Build a map of FLAC filename -> title
+        2. Find MP3 files and their corresponding FLAC originals
+        3. Map the title from FLAC to MP3
+        
         Returns:
-            Dictionary mapping filename -> track title
+            Dictionary mapping MP3 filename -> track title
         """
         track_titles = {}
         
@@ -107,27 +113,35 @@ class XmlParser:
                 tree = ET.parse(xml_file)
                 root = tree.getroot()
                 
-                current_file = None
-                current_title = None
-                
-                # Iterate through all elements
-                for element in root.iter():
-                    # Check for file element with MP3 name attribute
-                    if element.tag == "file":
-                        name = element.get("name", "")
-                        if name.endswith(".mp3"):
-                            current_file = name
-                            current_title = None
+                # First pass: Build map of source filename -> title
+                # (FLAC files have the title metadata)
+                source_titles = {}
+                for file_elem in root.findall('.//file'):
+                    filename = file_elem.get('name', '')
+                    title_elem = file_elem.find('title')
                     
-                    # Check for title element
-                    elif element.tag == "title" and current_file:
-                        if element.text:
-                            current_title = element.text.strip()
-                            # Decode HTML entities
-                            current_title = Config.decode_html_entities(current_title)
-                            track_titles[current_file] = current_title
-                            current_file = None
-                            current_title = None
+                    if title_elem is not None and title_elem.text:
+                        title = title_elem.text.strip()
+                        title = Config.decode_html_entities(title)
+                        source_titles[filename] = title
+                
+                # Second pass: Map MP3 files to their original source titles
+                for file_elem in root.findall('.//file'):
+                    filename = file_elem.get('name', '')
+                    
+                    if filename.endswith('.mp3'):
+                        # Check if this MP3 has a title directly
+                        title_elem = file_elem.find('title')
+                        if title_elem is not None and title_elem.text:
+                            title = title_elem.text.strip()
+                            track_titles[filename] = Config.decode_html_entities(title)
+                        else:
+                            # Look for <original> tag pointing to source file
+                            original_elem = file_elem.find('original')
+                            if original_elem is not None and original_elem.text:
+                                original_file = original_elem.text.strip()
+                                if original_file in source_titles:
+                                    track_titles[filename] = source_titles[original_file]
                 
                 logger.debug(f"Parsed {len(track_titles)} track titles from {xml_file.name}")
                 
