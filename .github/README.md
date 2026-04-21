@@ -1,162 +1,252 @@
-# Internet Archive Concert Downloader & Tagger
+# Internet Archive Concert Tools
 
-Bash scripts for downloading and managing live concert recordings from the Internet Archive (archive.org). Automatically downloads the best quality recording per concert date and updates ID3 tags with metadata from Internet Archive.
+Python toolkit for downloading and tagging live concert recordings from [Internet Archive's etree collection](https://archive.org/details/etree).
 
 ## Features
 
-- **Automatic deduplication**: Downloads only the highest-quality recording per concert date
-- **Smart quality scoring**: Evaluates recordings based on source type (soundboard/matrix/audience), equipment quality, track completeness, and community ratings
-- **Metadata caching**: 7-day cache of Internet Archive metadata for fast subsequent runs
-- **Comprehensive ID3 tagging**: Extracts metadata from Internet Archive XML files and tracklists
-- **Music.app compatibility**: Properly formatted ID3v2.3 tags with comment fields that display correctly in Apple Music
-- **Multi-disc support**: Handles concerts split across multiple discs or sets
-- **Jam band notation**: Preserves segue symbols (`>`, `->`) and musical notation from original tapers
+- **Automatic deduplication**: Downloads only the best recording per concert date
+- **Smart quality scoring**: Ranks recordings by track count, source quality, equipment, and ratings
+- **Metadata caching**: 7-day cache for fast repeated operations
+- **Comprehensive ID3 tagging**: Extracts metadata from XML and text files
+- **Multi-disc support**: Handles complex multi-disc/set concerts correctly
+- **Music.app compatible**: Proper COMM frame formatting for macOS Music.app
+- **Date filtering**: Download specific dates, months, or years
+- **Dry-run mode**: Preview tag changes before applying
 
 ## Installation
 
-### Dependencies
+### From Source (Development)
 
 ```bash
-# macOS (via Homebrew)
-brew install internetarchive jq ffmpeg
-
-# Install Python dependencies
-pip3 install mutagen
-```
-
-### Install Scripts
-
-```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/allen-ball/ia-mp3-download-and-tag.git
 cd ia-mp3-download-and-tag
 
-# Install scripts to ~/.local/bin
-mkdir -p ~/.local/bin
-cp ia-*.sh ia-set-comment.py ~/.local/bin/
-chmod +x ~/.local/bin/ia-*.sh ~/.local/bin/ia-set-comment.py
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Add to PATH (if not already present)
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+# Install in editable mode
+pip install -e .
 ```
 
-## Quick Start
+### System-wide Installation (pipx recommended)
 
 ```bash
-# Download all concerts for an artist
-ia-download-concerts.sh "Billy Strings"
+# Install pipx if not already installed
+brew install pipx  # macOS
+# or: python3 -m pip install --user pipx
+
+# Install ia-concerts
+pipx install /path/to/ia-mp3-download-and-tag
+```
+
+## Usage
+
+The `ia-concerts` command provides three subcommands:
+
+### 1. Build Metadata Cache
+
+Fetches all recordings for an artist and creates a scored cache:
+
+```bash
+ia-concerts build-cache "Billy Strings"
+```
+
+Options:
+- `--force`: Force rebuild even if cache is fresh
+
+### 2. Download Concerts
+
+Downloads concerts with automatic deduplication:
+
+```bash
+# Download all concerts
+ia-concerts download "Billy Strings"
 
 # Download specific dates
-ia-download-concerts.sh "Billy Strings" 2023-10-15 2023-10-16
+ia-concerts download "Billy Strings" 2023-10-15 2023-10-16
 
-# Download all shows from a specific month
-ia-download-concerts.sh "Phil Lesh and Friends" 2023-10
+# Download entire month
+ia-concerts download "Phil Lesh and Friends" 2023-10
 
-# Update ID3 tags on downloaded concerts
-ia-update-concert-tags.sh "Billy Strings"
+# Download entire year
+ia-concerts download "Grateful Mondays" 2015
 ```
+
+Options:
+- `--skip-cache`: Download all recordings without deduplication
+
+### 3. Update ID3 Tags
+
+Updates MP3 tags from metadata files:
+
+```bash
+ia-concerts update-tags "Billy Strings"
+```
+
+Options:
+- `--genre GENRE`: Override default genre (default: Bluegrass)
+- `--dry-run`: Show changes without modifying files
+
+### Global Options
+
+Available for all commands:
+
+- `-v, --verbose`: Enable debug logging
+- `-q, --quiet`: Show only warnings and errors
+- `--version`: Show version number
 
 ## How It Works
 
-### 1. Metadata Cache (`ia-build-metadata.sh`)
+### Quality Scoring Algorithm
 
-Fetches all recordings from Internet Archive for an artist and scores them based on:
-- Track completeness (1000 points per track)
-- Source quality: Soundboard (+500), Matrix (+300), Audience (0)
-- Equipment: Schoeps, DPA, Neumann, etc. (+200)
-- Processing: 24-bit indicators (+100)
-- Community ratings (50 points per star)
+Recordings are scored based on:
 
-Results are cached in `{Artist}/.metadata.yaml` for 7 days.
+- **Track count** (1000 pts/track): Completeness is highest priority
+- **Source quality**:
+  - Soundboard (SBD): +500 pts
+  - Matrix: +300 pts
+- **Equipment quality** (+200 pts): Schoeps, DPA, Neumann, AKG, Earthworks
+- **High-resolution** (+100 pts): 24-bit/96kHz indicators
+- **Community ratings** (50 pts/star): User feedback
+- **File size** (+1 pt/10MB): Minor tiebreaker
 
-### 2. Smart Download (`ia-download-concerts.sh`)
-
-- Uses metadata cache to select best recording per date
-- Downloads to clean directory structure: `{Artist}/{YYYY-MM-DD}/`
-- Skips already-downloaded concerts
-- Shows selection rationale (e.g., "Selected best of 3 recordings (score: 21850)")
-
-### 3. Tag Update (`ia-update-concert-tags.sh`)
-
-Updates ID3 tags with metadata extracted from:
-- Internet Archive XML files (highest priority for track titles)
-- Text tracklists included with recordings
-- ID3v2.3 format for Music.app compatibility
-- Adds source URL to comments: `https://archive.org/details/{identifier}`
-
-## Directory Structure
+### Directory Structure
 
 ```
-Billy Strings/
-├── .metadata.yaml          # Cached metadata (auto-generated)
-├── 2021-05-21/            # Concert date
-│   ├── 01.mp3
-│   ├── 02.mp3
-│   ├── *_files.xml        # IA metadata (track titles)
-│   ├── *_meta.xml         # IA metadata (album/artist)
-│   └── *.txt              # Tracklist files
-└── 2023-10-15/
+{Creator}/
+├── .metadata.yaml          # Cache file (auto-generated)
+├── 2023-10-15/            # Concert directory (YYYY-MM-DD)
+│   ├── *.mp3              # Audio files
+│   ├── *_meta.xml         # Archive.org metadata
+│   ├── *_files.xml        # File list with track titles
+│   └── *.txt              # Tracklists
+└── 2023-10-16/
     └── ...
 ```
 
-## Scripts
+### ID3 Tag Priority
 
-- **`ia-build-metadata.sh`** - Build metadata cache with quality scoring
-- **`ia-download-concerts.sh`** - Download concerts with automatic deduplication
-- **`ia-update-concert-tags.sh`** - Update MP3 ID3 tags from metadata
-- **`ia-set-comment.py`** - Helper for Music.app COMM frame compatibility
+Track titles are extracted in priority order:
+
+1. **XML files** (`*_files.xml`) - Most accurate, preserves taper's notation
+2. **Text files** (`.txt` tracklists) - Manual tracklists
+3. **Filenames/existing tags** - Fallback
+
+### Music.app Compatibility
+
+Sets proper COMM frames for comment display:
+- `COMM::XXX` (UTF-16, lang='XXX')
+- `COMM::eng` (LATIN1, lang='eng')
+
+Both frames are required for Music.app to display comments in its UI.
 
 ## Configuration
 
-### Changing Default Genre
+Default settings are in `ia_concert_tools/config.py`. You can modify:
 
-Edit line 603 in `ia-update-concert-tags.sh`:
+- Scoring weights
+- File patterns
+- Default genre
+- Cache expiry (default: 7 days)
+- Excluded filenames
+
+## Development
+
+See [DEVELOPMENT.md](.github/DEVELOPMENT.md) for development setup and workflow.
+
+### Running Tests
+
 ```bash
-GENRE="Bluegrass"  # Change to your preferred genre
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=ia_concert_tools --cov-report=html
+
+# Type checking
+mypy ia_concert_tools
+
+# Code formatting
+black ia_concert_tools tests
 ```
 
-### Adjusting Quality Scoring
+### Project Structure
 
-Edit scoring logic in `ia-build-metadata.sh` (lines 40-80) to adjust preferences:
-```bash
-# Example: Prioritize soundboard recordings even more
-if [[ "$source" =~ sbd|soundboard ]]; then
-    score=$((score + 1000))  # Increased from 500
-fi
 ```
+ia_concert_tools/
+├── __init__.py           # Package initialization
+├── __main__.py           # CLI entry point
+├── config.py             # Configuration constants
+├── logging_config.py     # Logging setup
+├── metadata.py           # Metadata caching
+├── downloader.py         # Download logic
+├── tagger.py             # ID3 tagging
+├── parsers/              # Metadata parsers
+│   ├── xml_parser.py     # XML parsing
+│   ├── tracklist_parser.py
+│   └── filename_parser.py
+└── utils/                # Utilities
+    ├── encoding.py       # Character encoding
+    └── validation.py     # Input validation
+```
+
+## Requirements
+
+- Python 3.8+
+- Dependencies (auto-installed):
+  - `internetarchive` - Internet Archive API
+  - `mutagen` - ID3 tag manipulation
+  - `pyyaml` - YAML cache handling
+  - `chardet` - Character encoding detection
+  - `click` - CLI framework
 
 ## Troubleshooting
 
-**Metadata cache is stale:**
-```bash
-rm "{Artist}/.metadata.yaml"
-ia-build-metadata.sh "Artist Name"
-```
+### Comments not showing in Music.app
 
-**Comments not displaying in Music.app:**
-```bash
-# Re-run tag update (will fix COMM frames)
-ia-update-concert-tags.sh "Artist Name"
-```
+Re-run tag update: `ia-concerts update-tags "Artist Name"`
 
-**Track titles are generic:**
-- Ensure `*_files.xml` exists (should be downloaded automatically)
-- Check text file format matches supported patterns
+The script now properly sets both COMM frames required by Music.app.
 
-See `.github/copilot-instructions.md` for comprehensive troubleshooting guide.
+### Character encoding errors
 
-## Documentation
+Script automatically detects encoding (UTF-8 vs Windows-1252) and converts only when needed to prevent double-encoding.
 
-- **[Copilot Instructions](copilot-instructions.md)** - Comprehensive guide for AI assistants and developers
-- Detailed architecture, code patterns, and troubleshooting information
+### Wrong track numbers on multi-disc concerts
+
+Script handles both disc notation (`d2t01`) and set notation (`s2t01`) with case-insensitive matching.
+
+### Metadata cache is stale
+
+Delete `.metadata.yaml` or use `--force`: `ia-concerts build-cache "Artist" --force`
+
+Cache automatically refreshes after 7 days.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file for details.
+MIT License - See LICENSE file for details
 
 ## Credits
 
-Designed for managing live concert recordings from the Internet Archive's [Live Music Archive](https://archive.org/details/etree) (etree collection).
+Original Bash implementation by Allen Ball.
 
-Special thanks to the tapers and uploaders who preserve and share live music recordings.
+Uses the excellent [internetarchive](https://archive.org/developers/internetarchive/) Python library by Internet Archive.
+
+## Links
+
+- [Internet Archive etree Collection](https://archive.org/details/etree)
+- [Internet Archive Python Library](https://archive.org/developers/internetarchive/)
+- [Project Repository](https://github.com/allen-ball/ia-mp3-download-and-tag)
