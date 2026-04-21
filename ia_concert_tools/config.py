@@ -104,7 +104,7 @@ class Config:
     TARGET_ENCODING = "utf-8"
     
     # Parallel processing settings
-    MAX_WORKERS = 4                         # For concurrent downloads/processing
+    MAX_WORKERS = 20                        # For concurrent downloads/processing
     
     @classmethod
     def get_ia_search_query(cls, creator: str) -> str:
