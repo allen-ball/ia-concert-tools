@@ -52,8 +52,8 @@ class Downloader:
             # Build/refresh cache if needed
             if not self.metadata_builder.is_cache_fresh():
                 logger.info("Metadata cache is stale or missing, building...")
-                # Pass date filters for optimization
-                self.metadata_builder.build_cache(date_filters=date_filters)
+                # Build complete cache (no date filtering)
+                self.metadata_builder.build_cache()
             else:
                 logger.info("Using existing metadata cache")
             

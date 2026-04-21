@@ -123,13 +123,12 @@ class MetadataBuilder:
             logger.debug(f"Failed to fetch {identifier}: {e}")
             return None
     
-    def build_cache(self, force: bool = False, date_filters: Optional[List[str]] = None) -> Path:
+    def build_cache(self, force: bool = False) -> Path:
         """
         Build metadata cache.
         
         Args:
             force: Force rebuild even if cache is fresh
-            date_filters: Optional date filters to limit fetching (for performance)
             
         Returns:
             Path to cache file
@@ -143,19 +142,11 @@ class MetadataBuilder:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"Building metadata cache for {self.creator}...")
+        logger.info("This may take a few minutes for large catalogs...")
         
-        # Search for items with date filter if provided
+        # Search for all items (no date filtering)
         search_query = Config.get_ia_search_query(self.creator)
-        
-        if date_filters:
-            logger.info(f"Optimized: Fetching only recordings for {len(date_filters)} specific dates")
-            # Build date query
-            date_query = " OR ".join([f'date:"{df}*"' for df in date_filters])
-            search_query += f" AND ({date_query})"
-            logger.debug(f"Search query: {search_query}")
-        else:
-            logger.info("This may take a few minutes for large catalogs...")
-            logger.debug(f"Search query: {search_query}")
+        logger.debug(f"Search query: {search_query}")
         
         # Get list of identifiers (fast, no metadata)
         search_results = ia.search_items(search_query, fields=["identifier", "date"])
