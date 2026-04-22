@@ -7,7 +7,8 @@ Python toolkit for downloading and tagging live concert recordings from [Interne
 - **Automatic deduplication**: Downloads only the best recording per concert date
 - **Smart quality scoring**: Ranks recordings by track count, source quality, equipment, and ratings
 - **Metadata caching**: 7-day cache for fast repeated operations
-- **Comprehensive ID3 tagging**: Extracts metadata from XML and text files
+- **Comprehensive ID3 tagging**: Extracts metadata from XML and text files.
+  automatically detects encoding (UTF-8 vs Windows-1252)
 - **Multi-disc support**: Handles complex multi-disc/set concerts correctly
 - **Music.app compatible**: Proper COMM frame formatting for macOS Music.app
 - **Date filtering**: Download specific dates, months, or years
@@ -38,7 +39,10 @@ brew install pipx  # macOS
 # or: python3 -m pip install --user pipx
 
 # Install ia-concerts
-pipx install /path/to/ia-mp3-download-and-tag
+pipx install /path/to/ia-concert-tools
+
+# Or
+pipx install git+https://github.com/allen-ball/ia-concert-tools.git
 ```
 
 ## Usage
@@ -246,28 +250,6 @@ See [VALIDATION.md](.github/VALIDATION.md) and [IDEMPOTENCY.md](.github/IDEMPOTE
   - `pyyaml` - YAML cache handling
   - `chardet` - Character encoding detection
   - `click` - CLI framework
-
-## Troubleshooting
-
-### Comments not showing in Music.app
-
-Re-run tag update: `ia-concerts update-tags "Artist Name"`
-
-The script now properly sets both COMM frames required by Music.app.
-
-### Character encoding errors
-
-Script automatically detects encoding (UTF-8 vs Windows-1252) and converts only when needed to prevent double-encoding.
-
-### Wrong track numbers on multi-disc concerts
-
-Script handles both disc notation (`d2t01`) and set notation (`s2t01`) with case-insensitive matching.
-
-### Metadata cache is stale
-
-Delete `.metadata.yaml` or use `--force`: `ia-concerts build-cache "Artist" --force`
-
-Cache automatically refreshes after 7 days.
 
 ## Contributing
 
