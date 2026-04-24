@@ -268,7 +268,7 @@ class Tagger:
                 audio.tags.delall('TCON')
                 audio.tags.add(TCON(encoding=3, text=metadata['genre']))
             
-            # Set disc tag only if multi-disc
+            # Set disc tag (always set, defaults to "1/1" for single-disc)
             if metadata.get('disc'):
                 audio.tags.delall('TPOS')
                 audio.tags.add(TPOS(encoding=3, text=metadata['disc']))
@@ -371,10 +371,16 @@ class Tagger:
             # Build track string (track/total)
             track_str = f"{track_num}/{total_tracks}"
             
-            # Build disc string (only if multi-disc)
-            disc_str = None
-            if total_discs > 1 and disc_num:
-                disc_str = f"{disc_num}/{total_discs}"
+            # Build disc string
+            # For multi-disc: use parsed disc number if available, else default to 1
+            # For single-disc: always "1/1"
+            if total_discs > 1:
+                if disc_num:
+                    disc_str = f"{disc_num}/{total_discs}"
+                else:
+                    disc_str = f"1/{total_discs}"
+            else:
+                disc_str = "1/1"
             
             # Build metadata dict
             metadata = {
@@ -383,12 +389,10 @@ class Tagger:
                 "album": album,
                 "date": date,
                 "track": track_str,
+                "disc": disc_str,
                 "genre": self.genre,
                 "comment": comment,
             }
-            
-            if disc_str:
-                metadata["disc"] = disc_str
             
             # Update tags
             if self.update_mp3_tags(mp3_file, metadata, dry_run):
