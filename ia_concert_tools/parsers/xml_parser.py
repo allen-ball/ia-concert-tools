@@ -28,6 +28,27 @@ class XmlParser:
         """
         self.concert_dir = Path(concert_dir)
     
+    @staticmethod
+    def clean_track_title(title: str) -> str:
+        """
+        Remove track number prefix from title if present.
+        
+        Some Internet Archive metadata includes track numbers in titles like:
+        - "01 - Intro"
+        - "02 - Song Name"
+        - "03. Another Song"
+        
+        Args:
+            title: Raw title from XML
+            
+        Returns:
+            Cleaned title without track number prefix
+        """
+        # Pattern: leading digits, optional period/dash/space, then title
+        # Match: "01 - Title", "01- Title", "01 Title", "01. Title"
+        cleaned = re.sub(r'^(\d{1,2})\s*[\-\.\s]+\s*', '', title)
+        return cleaned.strip()
+    
     def extract_meta_tag(self, tag_name: str) -> Optional[str]:
         """
         Extract a tag value from *_meta.xml file.
@@ -123,6 +144,7 @@ class XmlParser:
                     if title_elem is not None and title_elem.text:
                         title = title_elem.text.strip()
                         title = Config.decode_html_entities(title)
+                        title = XmlParser.clean_track_title(title)
                         source_titles[filename] = title
                 
                 # Second pass: Map MP3 files to their original source titles
@@ -134,7 +156,9 @@ class XmlParser:
                         title_elem = file_elem.find('title')
                         if title_elem is not None and title_elem.text:
                             title = title_elem.text.strip()
-                            track_titles[filename] = Config.decode_html_entities(title)
+                            title = Config.decode_html_entities(title)
+                            title = XmlParser.clean_track_title(title)
+                            track_titles[filename] = title
                         else:
                             # Look for <original> tag pointing to source file
                             original_elem = file_elem.find('original')
