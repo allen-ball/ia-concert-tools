@@ -25,6 +25,7 @@ class FilenameParser:
         
         Supports multiple patterns:
         - d2t01, s1t05 (disc + track)
+        - set101, set209 (set + disc digit + 2-digit track)
         - t01, T05, track.01 (track only, assumes disc 1)
         - 0101 Name.mp3 (4-digit: disc 01 + track 01)
         
@@ -41,21 +42,28 @@ class FilenameParser:
             track_num = int(match.group(2))
             return (disc_num, track_num)
         
-        # Pattern 2: track.NN or track-NN format (e.g., track.01, track-05)
+        # Pattern 2: setDTT format (e.g., set101 = disc 1, track 01; set209 = disc 2, track 09)
+        match = re.search(r"set(\d)(\d{2})", filename, re.IGNORECASE)
+        if match:
+            disc_num = int(match.group(1))
+            track_num = int(match.group(2))
+            return (disc_num, track_num)
+        
+        # Pattern 3: track.NN or track-NN format (e.g., track.01, track-05)
         match = re.search(r"track[\.\-_](\d{1,2})", filename, re.IGNORECASE)
         if match:
             disc_num = 1
             track_num = int(match.group(1))
             return (disc_num, track_num)
         
-        # Pattern 3: tNN format (e.g., t01, T05) - track only, assume disc 1
+        # Pattern 4: tNN format (e.g., t01, T05) - track only, assume disc 1
         match = re.search(r"[tT](\d{1,2})", filename)
         if match:
             disc_num = 1
             track_num = int(match.group(1))
             return (disc_num, track_num)
         
-        # Pattern 4: 4-digit format DDTT (e.g., 0101 = disc 01, track 01)
+        # Pattern 5: 4-digit format DDTT (e.g., 0101 = disc 01, track 01)
         match = re.match(r"^(\d{2})(\d{2})\s", filename)
         if match:
             disc_num = int(match.group(1))
@@ -124,10 +132,13 @@ class FilenameParser:
         # Pattern 1: [ds]Nt[N] format (e.g., d2t01)
         name = re.sub(r"[ds]\d+[tT]\d{1,2}", "", name, flags=re.IGNORECASE)
         
-        # Pattern 2: tNN format (e.g., t01)
+        # Pattern 2: setDTT format (e.g., set101)
+        name = re.sub(r"set\d\d{2}", "", name, flags=re.IGNORECASE)
+        
+        # Pattern 3: tNN format (e.g., t01)
         name = re.sub(r"[tT]\d{1,2}", "", name)
         
-        # Pattern 3: 4-digit format DDTT (e.g., 0101)
+        # Pattern 4: 4-digit format DDTT (e.g., 0101)
         name = re.sub(r"^\d{4}\s*", "", name)
         
         # Pattern 4: Leading digits with separator

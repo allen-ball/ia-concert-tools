@@ -166,8 +166,10 @@ score = (
 
 **Filename Parser (filename_parser.py):**
 - Disc-track notation: `d2t01`, `s1t05` (case-insensitive: `[tT]`)
+- Set notation: `set101`, `set209` (set/disc + 2-digit track, e.g., set 1 track 01)
 - Track extraction: space, underscore, PascalCase
 - Example: `01TurmoilAndTinfoil.mp3` → "Turmoil And Tinfoil"
+- Example: `GD791027set201.wav_vbr.mp3` → disc 2, track 01
 
 ### Tagger (tagger.py)
 
