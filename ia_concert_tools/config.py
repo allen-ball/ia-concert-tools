@@ -160,8 +160,13 @@ class Config:
     
     @classmethod
     def decode_html_entities(cls, text: str) -> str:
-        """
-        Decode HTML entities in text.
+        r"""
+        Decode HTML entities in text and remove erroneous backslash escapes.
+        
+        Internet Archive XML files sometimes contain incorrectly escaped
+        characters like \&gt; and \' that should just be &gt; and '.
+        ElementTree automatically decodes the HTML entities, so we need to
+        remove backslashes before the resulting characters (>, <, ", ', &).
         
         Args:
             text: Text with HTML entities
@@ -169,9 +174,23 @@ class Config:
         Returns:
             Decoded text
         """
+        import re
+        
         result = text
+        
+        # First decode any remaining HTML entities that ElementTree didn't handle
         for entity, char in cls.HTML_ENTITIES.items():
             result = result.replace(entity, char)
+        
+        # Remove backslashes before common characters that were HTML entities
+        # ElementTree auto-decodes &gt; &lt; &quot; &apos; &amp; before we see them
+        # So we need to remove backslashes before >, <, ", ', &
+        result = result.replace('\\>', '>')
+        result = result.replace('\\<', '<')
+        result = result.replace('\\"', '"')
+        result = result.replace("\\'", "'")
+        result = result.replace('\\&', '&')
+        
         return result
     
     @classmethod
