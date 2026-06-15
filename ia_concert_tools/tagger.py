@@ -24,6 +24,133 @@ logger = get_logger("tagger")
 class Tagger:
     """Update ID3 tags on concert recordings."""
     
+    # US State name to postal code mapping
+    US_STATES = {
+        'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
+        'California': 'CA', 'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE',
+        'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID',
+        'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS',
+        'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+        'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
+        'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
+        'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+        'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK',
+        'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+        'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT',
+        'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV',
+        'Wisconsin': 'WI', 'Wyoming': 'WY',
+        'District of Columbia': 'DC',
+    }
+    
+    @staticmethod
+    def canonicalize_initials(text: str) -> str:
+        """
+        Remove periods from initials in text.
+        
+        Examples:
+            "U.S.A." -> "USA"
+            "Washington, D.C." -> "Washington, DC"
+            "N.Y." -> "NY"
+        
+        Args:
+            text: Text with potential initials
+            
+        Returns:
+            Text with periods removed from initials
+        """
+        if not text:
+            return text
+        
+        # Pattern: Match single letter followed by period
+        # This handles cases like "U.S.A.", "D.C.", "N.Y."
+        result = re.sub(r'([A-Z])\.', r'\1', text)
+        return result
+    
+    @staticmethod
+    def canonicalize_us_states(text: str) -> str:
+        """
+        Replace US state names with their 2-letter postal codes.
+        
+        Examples:
+            "San Francisco, California" -> "San Francisco, CA"
+            "New York, New York" -> "New York, NY"
+            "Hollywood, Los Angeles, California" -> "Hollywood, Los Angeles, CA"
+        
+        Args:
+            text: Location string that may contain US state names
+            
+        Returns:
+            Text with state names replaced by postal codes
+        """
+        if not text:
+            return text
+        
+        result = text
+        
+        # Special cases to handle before general state replacement
+        # Handle "Washington, D.C." / "Washington, DC" - don't replace Washington here
+        # as it refers to the city, not the state
+        dc_pattern = re.compile(r'\bWashington,\s*DC\b', re.IGNORECASE)
+        if dc_pattern.search(result):
+            # Already in correct format, skip Washington state replacement for this text
+            # Sort by length (descending) to match longer state names first
+            for state_name in sorted(Tagger.US_STATES.keys(), key=len, reverse=True):
+                if state_name == 'Washington':
+                    continue  # Skip Washington state for D.C. locations
+                postal_code = Tagger.US_STATES[state_name]
+                pattern = re.compile(r'\b' + re.escape(state_name) + r'\b', re.IGNORECASE)
+                result = pattern.sub(postal_code, result)
+            return result
+        
+        # Sort by length (descending) to match longer state names first
+        # This prevents "New York" from matching just "York" in "New York"
+        for state_name in sorted(Tagger.US_STATES.keys(), key=len, reverse=True):
+            postal_code = Tagger.US_STATES[state_name]
+            # Use word boundary to ensure we match complete state names
+            # Case-insensitive match but preserve original case in surrounding text
+            pattern = re.compile(r'\b' + re.escape(state_name) + r'\b', re.IGNORECASE)
+            result = pattern.sub(postal_code, result)
+        
+        return result
+    
+    @staticmethod
+    def build_album_name(date: Optional[str], venue: Optional[str], coverage: Optional[str]) -> str:
+        """
+        Build album name from metadata components.
+        
+        Format: {date} - {venue}, {city}, {state-or-country}
+        
+        Args:
+            date: Concert date (e.g., "1971-08-06")
+            venue: Venue name (e.g., "Hollywood Palladium")
+            coverage: Location string (e.g., "Hollywood, CA" or "London, England")
+            
+        Returns:
+            Formatted album name
+        """
+        parts = []
+        
+        # Add date
+        if date:
+            parts.append(date)
+        
+        # Add venue and location
+        if venue and coverage:
+            # Canonicalize: remove periods from initials, convert state names to postal codes
+            venue_clean = Tagger.canonicalize_initials(venue)
+            coverage_clean = Tagger.canonicalize_initials(coverage)
+            coverage_clean = Tagger.canonicalize_us_states(coverage_clean)
+            parts.append(f"{venue_clean}, {coverage_clean}")
+        elif venue:
+            venue_clean = Tagger.canonicalize_initials(venue)
+            parts.append(venue_clean)
+        elif coverage:
+            coverage_clean = Tagger.canonicalize_initials(coverage)
+            coverage_clean = Tagger.canonicalize_us_states(coverage_clean)
+            parts.append(coverage_clean)
+        
+        return " - ".join(parts) if parts else "Live Concert"
+    
     def __init__(self, creator: str, genre: Optional[str] = None):
         """
         Initialize tagger.
@@ -306,7 +433,21 @@ class Tagger:
         xml_metadata = xml_parser.get_all_metadata()
         
         artist = xml_metadata.get('artist') or self.creator
-        album = xml_metadata.get('album') or f"Live at {concert_dir.name}"
+        
+        # Build album name from venue, coverage, and date
+        venue = xml_metadata.get('venue')
+        coverage = xml_metadata.get('coverage')
+        concert_date = xml_metadata.get('date') or concert_dir.name
+        
+        # Use new album format: {date} - {venue}, {city}, {state-or-country}
+        album = self.build_album_name(concert_date, venue, coverage)
+        
+        # If no venue/coverage available, fall back to XML title or directory name
+        if not venue and not coverage:
+            album = xml_metadata.get('album') or f"Live at {concert_dir.name}"
+            album = self.canonicalize_initials(album)
+            album = self.canonicalize_us_states(album)
+        
         date = xml_metadata.get('year') or concert_dir.name[:4]
         
         # Get identifier for comment

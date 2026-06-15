@@ -114,6 +114,33 @@ class XmlParser:
         """
         return self.extract_meta_tag("identifier")
     
+    def get_venue(self) -> Optional[str]:
+        """
+        Get venue from metadata.
+        
+        Returns:
+            Venue name or None
+        """
+        return self.extract_meta_tag("venue")
+    
+    def get_coverage(self) -> Optional[str]:
+        """
+        Get coverage (location) from metadata.
+        
+        Returns:
+            Coverage string (e.g., "Hollywood, CA") or None
+        """
+        return self.extract_meta_tag("coverage")
+    
+    def get_date(self) -> Optional[str]:
+        """
+        Get date from metadata.
+        
+        Returns:
+            Date string (e.g., "1971-08-06") or None
+        """
+        return self.extract_meta_tag("date")
+    
     def get_track_titles(self) -> Dict[str, str]:
         """
         Parse track titles from *_files.xml.
@@ -180,11 +207,14 @@ class XmlParser:
         Get all available metadata from XML files.
         
         Returns:
-            Dictionary with artist, album, year, identifier
+            Dictionary with artist, album, year, identifier, venue, coverage, date
         """
         return {
             "artist": self.get_artist(),
             "album": self.get_album(),
             "year": self.get_year(),
             "identifier": self.get_identifier(),
+            "venue": self.get_venue(),
+            "coverage": self.get_coverage(),
+            "date": self.get_date(),
         }
